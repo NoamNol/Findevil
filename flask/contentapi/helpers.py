@@ -3,9 +3,10 @@ from collections import Counter
 
 def normalize_params(params_data: list[dict]) -> dict[str, str]:
     '''
-    1. Validate parameters value
-    2. Remove missing parameters or use default value
+    1. Remove missing parameters or use default value
+    2. Validate parameters value
     3. Force no more than one parameter in group (For example, only one 'filter' parameter)
+    4. Convert value to string by simple str(value), or by custom toString function
     '''
     result = {}
     groups_counter = Counter()
@@ -13,7 +14,6 @@ def normalize_params(params_data: list[dict]) -> dict[str, str]:
     for p in params_data:
         name = p['name']
         value = p['value']
-        to_string = p.get('toString', str)
         group = p.get('group')
         validator = p.get('validator')
 
@@ -32,5 +32,6 @@ def normalize_params(params_data: list[dict]) -> dict[str, str]:
             if (not is_valid(value)):
                 raise ValueError(f"{name}:{value} is invalid parameter ({message})")
 
+        to_string = p.get('toString', str)
         result[name] = to_string(value)
     return result
