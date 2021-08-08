@@ -1,7 +1,7 @@
-from typing import Callable, Iterator
+from typing import Callable
 
 
-def api_pages_iterator(api_func: Callable, *args, **kwargs) -> Iterator:
+async def api_pages_iterator(api_func: Callable, *args, **kwargs):
     '''
     Iterate the api pages.
     Each page contains 'items' and may contain 'nextPageToken'.
@@ -19,13 +19,14 @@ def api_pages_iterator(api_func: Callable, *args, **kwargs) -> Iterator:
         err = None
         response = None
         try:
-            response = api_func(*args, **api_kwargs)
+            response = await api_func(*args, **api_kwargs)
         except Exception as e:
             err = e
-        yield response, err
+        response = response or {}
+        items = response.get('items', [])
+        yield items, err
         if err or not response:
             break
-        items = response.get('items')
         if isinstance(items, list):
             items_count += len(items)
         next_page_token = response.get('nextPageToken')

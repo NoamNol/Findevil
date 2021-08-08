@@ -1,5 +1,6 @@
 import googleapiclient.discovery
 import googleapiclient.errors
+import asyncio
 from enum import Enum
 
 from .base import BaseApi
@@ -30,16 +31,17 @@ class CommentThreads(BaseApi):
     def __init__(self, api_key: str):
         super().__init__(api_key=api_key)
 
-    def list(self,
-             part: set[ParamPart],
-             max_results: int = None,
-             order: ParamOrder = None,
-             page_token: str = None,
-             search_terms: str = None,
-             text_format: ParamTextFormat = None,
-             id: set[str] = None,
-             video_id: str = None
-             ):
+    async def list(
+        self,
+        part: set[ParamPart],
+        max_results: int = None,
+        order: ParamOrder = None,
+        page_token: str = None,
+        search_terms: str = None,
+        text_format: ParamTextFormat = None,
+        id: set[str] = None,
+        video_id: str = None
+    ):
         '''
         Returns a list of comment threads that match the API request parameters.
         '''
@@ -99,5 +101,7 @@ class CommentThreads(BaseApi):
             self.api_service_name, self.api_version, developerKey=self.api_key)
 
         request = youtube.commentThreads().list(**params)
-        response = request.execute()
+        loop = asyncio.get_event_loop()
+        future = loop.run_in_executor(None, request.execute)
+        response = await future
         return response
