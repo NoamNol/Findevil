@@ -97,6 +97,6 @@ class CommentThreads(BaseApi):
         youtube = googleapiclient.discovery.build(
             self.api_service_name, self.api_version, developerKey=self.api_key)
 
-        request = youtube.commentthreads().list(**params)
+        request = youtube.commentThreads().list(**params)
         response = request.execute()
         return response
