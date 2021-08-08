@@ -4,9 +4,10 @@ from collections import Counter
 def normalize_params(params_data: list[dict]) -> dict[str, str]:
     '''
     1. Remove missing parameters or use default value
-    2. Validate parameters value
-    3. Force no more than one parameter in group (For example, only one 'filter' parameter)
-    4. Convert value to string by simple str(value), or by custom toString function
+    2. Force no more than one parameter in group (For example, only one 'filter' parameter)
+    3. Fix value with a middleware function
+    4. Validate parameters value
+    5. Convert value to string with simple str(value), or with custom toString function
     '''
     result = {}
     groups_counter = Counter()
@@ -15,6 +16,7 @@ def normalize_params(params_data: list[dict]) -> dict[str, str]:
         name = p['name']
         value = p['value']
         group = p.get('group')
+        middleware = p.get('middleware')
         validator = p.get('validator')
 
         if value is None:
@@ -27,6 +29,8 @@ def normalize_params(params_data: list[dict]) -> dict[str, str]:
             groups_counter[group] += 1
             if groups_counter[group] > 1:
                 raise ValueError(f"Must specify exactly one {group} parameter")
+        if middleware:
+            value = middleware(value)
         if validator:
             message, is_valid = validator
             if (not is_valid(value)):

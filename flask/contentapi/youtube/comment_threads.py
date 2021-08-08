@@ -66,6 +66,7 @@ class CommentThreads(BaseApi):
             {
                 'name': 'maxResults',
                 'value': max_results,
+                'middleware': lambda v: min(v, 100),
                 'validator': (
                     'Acceptable values are 1 to 100',
                     lambda v: v >= 1 and v <= 100
