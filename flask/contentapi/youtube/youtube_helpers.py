@@ -16,8 +16,15 @@ def api_pages_iterator(api_func: Callable, *args, **kwargs) -> Iterator:
     api_kwargs = kwargs.copy()
     while items_count < max_items:
         api_kwargs['max_results'] = max_items - items_count
-        response = api_func(*args, **api_kwargs)
-        yield response
+        err = None
+        response = None
+        try:
+            response = api_func(*args, **api_kwargs)
+        except Exception as e:
+            err = e
+        yield response, err
+        if err or not response:
+            break
         items = response.get('items')
         if isinstance(items, list):
             items_count += len(items)

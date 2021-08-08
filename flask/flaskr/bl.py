@@ -17,8 +17,10 @@ def keep_all_video_comment_thread_ids(video_id: str, api_key: str, max_items: in
         part={comment_threads.ParamPart.ID},
         video_id=video_id,
     )
-    # TODO: handle errors
-    for page in pages_iterator:
+    for page, err in pages_iterator:
+        if err:
+            # TODO: handle error
+            break
         page_ids: list[str] = glom(page, ('items', ['id']), default=[])
         if not page_ids:
             # TODO: log warning about empty page
