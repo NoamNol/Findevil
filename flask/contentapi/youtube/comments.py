@@ -99,10 +99,10 @@ def parse_api_comment(api_comment: dict) -> YoutubeComment:
         comment_id=api_comment.get('id', ''),
         video_id=glom(api_comment, 'snippet.videoId', default=''),
         text_original=glom(api_comment, 'snippet.textOriginal', default=''),
-        parent_id=glom(api_comment, 'snippet.parentId', default=''),
+        parent_id=glom(api_comment, 'snippet.parentId', default=None),
         author_channel_id=glom(api_comment, 'snippet.authorChannelId.value', default=''),
         like_count=glom(api_comment, 'snippet.likeCount', default=0),
         published_at=glom(api_comment, 'snippet.publishedAt', default=''),
-        updated_at=glom(api_comment, 'snippet.updatedAt', default=''),
+        updated_at=glom(api_comment, 'snippet.updatedAt', default='')
     )
     return yc

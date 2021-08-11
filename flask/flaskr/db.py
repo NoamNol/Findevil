@@ -1,2 +1,2 @@
-def insert_many_comments(many):
+def insert_many_youtube_comments(many):
     pass
