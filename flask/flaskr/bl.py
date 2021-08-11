@@ -18,11 +18,11 @@ async def scan_youtube_video_comments(video_id: str, api_key: str, max_items: in
 
     # Start replies workers, they wait to get ids from the top_level_comment_queue,
     # fetch replies from the api and save to db
-    replies_workers = [asyncio.create_task(replies_worker(
+    replies_workers = [asyncio.create_task(_replies_worker(
         top_level_comment_queue, api_key, shared_data, max_items)) for _ in range(WORKERS_NUM)]
 
     # Read top level comments, save to db and fill the top_level_comment_queue
-    await get_all_top_level_comments(
+    await _get_all_top_level_comments(
         top_level_comment_queue, video_id, api_key, shared_data, max_items)
     shared_data['producer_alive'] = False
 
@@ -30,7 +30,10 @@ async def scan_youtube_video_comments(video_id: str, api_key: str, max_items: in
     return shared_data['comments_count'], shared_data['replies_count']
 
 
-async def get_all_top_level_comments(
+# ---------------- PRIVATE ----------------
+
+
+async def _get_all_top_level_comments(
     top_level_comment_queue: asyncio.Queue,
     video_id: str,
     api_key: str,
@@ -63,7 +66,7 @@ async def get_all_top_level_comments(
         if shared_data['comments_count'] >= max_items:
             break
 
-        # To save less comments than the number of comments left until max_items
+        # Limit the comments number to the number of comments left until max_items
         comments_left: int = max_items - shared_data['comments_count']
         top_level_comments_to_save = top_level_comments[:comments_left]
         shared_data['comments_count'] += len(top_level_comments_to_save)
@@ -78,7 +81,7 @@ async def get_all_top_level_comments(
                 await top_level_comment_queue.put((tl_comment.comment_id, tl_comment.video_id))
 
 
-async def get_all_comment_replies(
+async def _get_all_comment_replies(
     comment_id: str,
     video_id: str,
     api_key: str,
@@ -107,7 +110,7 @@ async def get_all_comment_replies(
         if shared_data['comments_count'] >= max_items:
             break
 
-        # To save less comments than the number of comments left until max_items
+        # Limit the comments number to the number of comments left until max_items
         comments_left: int = max_items - shared_data['comments_count']
         replies_to_save = replies[:comments_left]
         shared_data['comments_count'] += len(replies_to_save)
@@ -116,7 +119,7 @@ async def get_all_comment_replies(
         db.insert_many_youtube_comments(replies_to_save)
 
 
-async def replies_worker(
+async def _replies_worker(
     top_level_comment_queue: asyncio.Queue,
     api_key: str,
     shared_data: dict,
@@ -125,7 +128,7 @@ async def replies_worker(
     while shared_data['comments_count'] < max_items:
         try:
             comment_id, video_id = top_level_comment_queue.get_nowait()
-            await get_all_comment_replies(comment_id, video_id, api_key, shared_data, max_items)
+            await _get_all_comment_replies(comment_id, video_id, api_key, shared_data, max_items)
             top_level_comment_queue.task_done()
         except asyncio.QueueEmpty:
             if shared_data['producer_alive']:
