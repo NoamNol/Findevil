@@ -1,0 +1,7 @@
+.vscode/
+env/
+__pycache__/
+*.py[cod]
+.env
+.gitignore
+Dockerfile

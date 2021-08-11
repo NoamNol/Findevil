@@ -1,0 +1,50 @@
+version: '3.7'
+
+services:
+  flask:
+    build: ./flask
+    container_name: flask
+    image: flask-findevil:latest
+    restart: unless-stopped
+    environment:
+      YOUTUBE_API_KEY: ${YOUTUBE_API_KEY}
+      ASYNC_WORKERS: ${ASYNC_WORKERS}
+      MONGODB_DATABASE: flaskdb
+      MONGODB_USERNAME: ${MONGODB_FLASK_USERNAME}
+      MONGODB_PASSWORD: ${MONGODB_FLASK_PASSWORD}
+      MONGODB_HOSTNAME: mongodb
+      MONGODB_PORT: 27017 # default port, used inside the network
+    depends_on:
+      - mongodb
+    ports:
+      - 5001:5000
+    networks:
+      - backend
+
+  mongodb:
+    build: ./mongo
+    container_name: mongodb
+    image: mongo-findevil:latest
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGODB_ADMIN_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_ADMIN_PASSWORD}
+      MONGO_INITDB_DATABASE: flaskdb
+      flaskdbUser: ${MONGODB_FLASK_USERNAME}
+      flaskdbPwd: ${MONGODB_FLASK_PASSWORD}
+      MONGODB_DATA_DIR: /data/db
+      MONDODB_LOG_DIR: /dev/null
+    volumes:
+      # see https://stackoverflow.com/questions/54911021/unable-to-start-docker-mongo-image-on-windows
+      - mongodbdata:/data/db
+    networks:
+      - backend
+    ports:
+      - 27019:27017
+
+networks:
+  backend:
+    driver: bridge
+volumes:
+  mongodbdata:
+    driver: local
