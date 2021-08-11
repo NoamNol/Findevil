@@ -92,3 +92,10 @@ Use port `5000` to send requests to the `dev` server:
 
 ### Debugging
 To debug Flask, instead of `flask run` use the debugger in VSCode.
+
+## Todo
+- Find links in comments.
+- Find evil content in comments.
+- Consider using [Aiogoogle](https://github.com/omarryhan/aiogoogle) for better async.
+- Add load balancing to handle multiple requests.
+
