@@ -1,9 +1,12 @@
 import asyncio
 import os
 import sys
+from urlextract import URLExtract
 from glom import glom
+from typing import Tuple
 
 from contentapi.youtube import comment_threads, comments
+from contentapi.content_type import ContentType
 from contentapi.youtube.youtube_helpers import api_pages_iterator
 from models.youtube import YoutubeComment
 from . import db
@@ -31,6 +34,37 @@ async def scan_youtube_video_comments(video_id: str, api_key: str, max_items: in
 
 
 # ---------------- PRIVATE ----------------
+
+
+def _handle_youtube_comments(comments: list[YoutubeComment]):
+    if not comments:
+        return
+    links_in_comments = _find_links_in_comments(comments)
+    db.insert_many_youtube_comments(comments)
+    db.insert_many_content_links(links_in_comments)
+
+
+def _find_links_in_comments(
+    comments: list[YoutubeComment]
+) -> list[Tuple[str, db.ContentItemId]]:
+    '''
+    Find links in Youtube comments, and bind each link to the comment it came from.
+    '''
+    all_links = []
+    for c in comments:
+        links_in_comment = _find_links_in_text(c.text_original)
+        links_with_to_content_id = [(link, db.ContentItemId(
+            content_id=c.comment_id,
+            content_type=ContentType.YOUTUBE_COMMENT)
+        ) for link in links_in_comment]
+        all_links.extend(links_with_to_content_id)
+    return all_links
+
+
+def _find_links_in_text(text: str) -> list[str]:
+    extractor = URLExtract()
+    urls = extractor.find_urls(text, only_unique=True)
+    return urls
 
 
 async def _get_all_top_level_comments(
@@ -71,7 +105,7 @@ async def _get_all_top_level_comments(
         top_level_comments_to_save = top_level_comments[:comments_left]
         shared_data['comments_count'] += len(top_level_comments_to_save)
 
-        db.insert_many_youtube_comments(top_level_comments_to_save)
+        _handle_youtube_comments(top_level_comments_to_save)
 
         # YouTube API returns CommentThread with only part of the full replies list,
         # so we can't save all replies at this point.
@@ -116,7 +150,7 @@ async def _get_all_comment_replies(
         shared_data['comments_count'] += len(replies_to_save)
         shared_data['replies_count'] += len(replies_to_save)
 
-        db.insert_many_youtube_comments(replies_to_save)
+        _handle_youtube_comments(replies_to_save)
 
 
 async def _replies_worker(

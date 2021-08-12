@@ -1,10 +1,26 @@
 import os
 from flask import g
 from pymongo import MongoClient, UpdateOne
-from dataclasses import asdict
+from dataclasses import dataclass, asdict
+from typing import Any, Tuple
 
 from flaskr import app
 from models.youtube import YoutubeComment
+from contentapi.content_type import ContentType
+
+
+@dataclass
+class ContentItemId:
+    '''
+    Identity of single content item in the db.
+
+    The identity is simply the "collection name" + "document id" of the content item.
+
+    For example, a YouTube comment is a content item,
+    and its identity is "youtube" + "comment id".
+    '''
+    content_type: ContentType
+    content_id: Any
 
 
 def _get_db():
@@ -62,3 +78,16 @@ def _insert_or_update_many(dict_list: list[dict], ordered: bool = True):
 def insert_many_youtube_comments(many_comments: list[YoutubeComment]):
     dict_list = [_dataclass_to_dict(d, key_as_id='comment_id') for d in many_comments]
     _insert_or_update_many(dict_list, ordered=False)
+
+
+def insert_many_content_links(links: list[Tuple[str, ContentItemId]]):
+    if not links:
+        return
+    dict_list = [{
+        'link': link,
+        'source_type': content_item_id.content_type.value,
+        'source_id': content_item_id.content_id
+    } for link, content_item_id in links]
+
+    db = _get_db()
+    db.links.insert_many(dict_list, ordered=False)
